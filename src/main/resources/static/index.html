@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Manager</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .project { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        .task { margin-left: 20px; color: #555; }
+        .completed { text-decoration: line-through; color: #888; }
+        button { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Project Manager</h1>
+
+    <div>
+        <h2>Create Project</h2>
+        <input type="text" id="projectName" placeholder="Project Name">
+        <button onclick="createProject()">Create</button>
+    </div>
+
+    <h2>Projects</h2>
+    <div id="projectsList"></div>
+
+    <script>
+        const API_URL = '/api';
+
+        async function createProject() {
+            const name = document.getElementById('projectName').value;
+            if (!name) return alert('Name required');
+            
+            await fetch(`${API_URL}/projects`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            
+            document.getElementById('projectName').value = '';
+            loadProjects();
+        }
+
+        async function loadProjects() {
+            const res = await fetch(`${API_URL}/projects`);
+            const projects = await res.json();
+            
+            const container = document.getElementById('projectsList');
+            container.innerHTML = '';
+            
+            for (const p of projects) {
+                const div = document.createElement('div');
+                div.className = 'project';
+                div.innerHTML = `
+                    <h3>${p.name} (${p.status}) 
+                        ${p.status === 'DRAFT' ? `<button onclick="activateProject('${p.id}')">Activate</button>` : ''}
+                    </h3>
+                    <div>
+                        <input type="text" id="task-${p.id}" placeholder="New Task">
+                        <button onclick="createTask('${p.id}')">Add Task</button>
+                    </div>
+                    <div id="tasks-${p.id}">Loading tasks...</div>
+                `;
+                container.appendChild(div);
+                loadTasks(p.id);
+            }
+        }
+
+        async function activateProject(id) {
+            await fetch(`${API_URL}/projects/${id}/activate`, { method: 'PATCH' });
+            loadProjects();
+        }
+
+        async function createTask(projectId) {
+            const title = document.getElementById(`task-${projectId}`).value;
+            if (!title) return alert('Title required');
+
+            await fetch(`${API_URL}/projects/${projectId}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title })
+            });
+            
+            loadTasks(projectId);
+        }
+
+        async function loadTasks(projectId) {
+            // Note: The API doesn't have a direct endpoint to list tasks for a project in the specs.
+            // But usually we would have one. For now, I'll assume the project list might include tasks or I need to add an endpoint.
+            // Wait, the specs didn't specify GET /api/projects/{id}/tasks.
+            // But I implemented JpaTaskRepository.findByProjectId.
+            // I should probably add an endpoint to list tasks or include them in the project response.
+            // For simplicity, let's just add a quick endpoint in TaskController or ProjectController if possible, 
+            // OR just fetch all tasks and filter client side (bad practice but simple for now if no endpoint).
+            // Actually, I'll add GET /api/projects/{projectId}/tasks to TaskController.
+            
+            const res = await fetch(`${API_URL}/projects/${projectId}/tasks`);
+            if (res.ok) {
+                const tasks = await res.json();
+                const container = document.getElementById(`tasks-${projectId}`);
+                container.innerHTML = tasks.map(t => `
+                    <div class="task ${t.completed ? 'completed' : ''}">
+                        ${t.title}
+                        ${!t.completed ? `<button onclick="completeTask('${t.id}', '${projectId}')">Complete</button>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                 document.getElementById(`tasks-${projectId}`).innerHTML = 'Could not load tasks';
+            }
+        }
+
+        async function completeTask(taskId, projectId) {
+            await fetch(`${API_URL}/tasks/${taskId}/complete`, { method: 'PATCH' });
+            loadTasks(projectId);
+        }
+
+        loadProjects();
+    </script>
+</body>
+</html>
