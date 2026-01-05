@@ -41,7 +41,10 @@ public class ProjectRepositoryAdapter implements ProjectRepositoryPort {
 
     @Override
     public void deleteById(UUID id) {
-        jpaProjectRepository.deleteById(id);
+        jpaProjectRepository.findById(id).ifPresent(entity -> {
+            entity.setDeleted(true);
+            jpaProjectRepository.save(entity);
+        });
     }
 
     private ProjectEntity toEntity(Project project) {

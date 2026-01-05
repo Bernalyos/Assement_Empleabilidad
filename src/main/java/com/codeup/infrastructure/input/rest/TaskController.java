@@ -4,10 +4,13 @@ import com.codeup.domain.port.in.CompleteTaskUseCase;
 import com.codeup.domain.port.in.CreateTaskUseCase;
 import com.codeup.domain.port.in.DeleteTaskUseCase;
 import com.codeup.domain.port.in.ListTasksUseCase;
+import com.codeup.infrastructure.input.rest.dto.TaskResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -35,8 +38,11 @@ public class TaskController {
     }
 
     @GetMapping("/projects/{projectId}/tasks")
-    public ResponseEntity<java.util.List<com.codeup.domain.model.Task>> listTasks(@PathVariable UUID projectId) {
-        return ResponseEntity.ok(listTasksUseCase.listByProjectId(projectId));
+    public ResponseEntity<List<TaskResponse>> listTasks(@PathVariable UUID projectId) {
+        List<TaskResponse> response = listTasksUseCase.listByProjectId(projectId).stream()
+                .map(t -> new TaskResponse(t.getId(), t.getProjectId(), t.getTitle(), t.getCompleted(), t.getDeleted()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/tasks/{id}/complete")

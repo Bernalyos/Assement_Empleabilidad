@@ -48,7 +48,10 @@ public class TaskRepositoryAdapter implements TaskRepositoryPort {
 
     @Override
     public void deleteById(UUID id) {
-        jpaTaskRepository.deleteById(id);
+        jpaTaskRepository.findById(id).ifPresent(entity -> {
+            entity.setDeleted(true);
+            jpaTaskRepository.save(entity);
+        });
     }
 
     private TaskEntity toEntity(Task task) {

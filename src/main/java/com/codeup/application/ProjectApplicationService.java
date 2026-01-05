@@ -13,13 +13,9 @@ import com.codeup.domain.port.in.DeleteProjectUseCase;
 import com.codeup.domain.port.out.AuditLogPort;
 import com.codeup.domain.port.out.CurrentUserPort;
 import com.codeup.domain.port.out.NotificationPort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.UUID;
 
-@Service
 public class ProjectApplicationService implements CreateProjectUseCase, ActivateProjectUseCase, DeleteProjectUseCase {
 
     private final ProjectRepositoryPort projectRepository;
@@ -41,7 +37,6 @@ public class ProjectApplicationService implements CreateProjectUseCase, Activate
     }
 
     @Override
-    @Transactional
     public UUID create(String name) {
         UUID ownerId = currentUserPort.getCurrentUserId();
         Project project = new Project(UUID.randomUUID(), ownerId, name, ProjectStatus.DRAFT, false);
@@ -50,7 +45,6 @@ public class ProjectApplicationService implements CreateProjectUseCase, Activate
     }
 
     @Override
-    @Transactional
     public void activate(UUID projectId) {
         UUID currentUserId = currentUserPort.getCurrentUserId();
         Project project = projectRepository.findById(projectId)
@@ -76,7 +70,6 @@ public class ProjectApplicationService implements CreateProjectUseCase, Activate
     }
 
     @Override
-    @Transactional
     public void delete(UUID projectId) {
         UUID currentUserId = currentUserPort.getCurrentUserId();
         Project project = projectRepository.findById(projectId)

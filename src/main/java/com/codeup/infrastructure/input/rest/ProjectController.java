@@ -1,15 +1,16 @@
 package com.codeup.infrastructure.input.rest;
 
-import com.codeup.domain.model.Project;
 import com.codeup.domain.port.in.ActivateProjectUseCase;
 import com.codeup.domain.port.in.CreateProjectUseCase;
 import com.codeup.domain.port.in.DeleteProjectUseCase;
 import com.codeup.domain.port.out.ProjectRepositoryPort;
+import com.codeup.infrastructure.input.rest.dto.ProjectResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -37,8 +38,11 @@ public class ProjectController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Project>> listProjects() {
-        return ResponseEntity.ok(projectRepositoryPort.findAll());
+    public ResponseEntity<List<ProjectResponse>> listProjects() {
+        List<ProjectResponse> response = projectRepositoryPort.findAll().stream()
+                .map(p -> new ProjectResponse(p.getId(), p.getOwnerId(), p.getName(), p.getStatus(), p.getDeleted()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}/activate")

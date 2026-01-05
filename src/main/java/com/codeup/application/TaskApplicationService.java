@@ -12,15 +12,11 @@ import com.codeup.domain.port.in.DeleteTaskUseCase;
 import com.codeup.domain.port.out.AuditLogPort;
 import com.codeup.domain.port.out.CurrentUserPort;
 import com.codeup.domain.port.out.NotificationPort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.UUID;
 
 import com.codeup.domain.port.in.ListTasksUseCase;
 import java.util.List;
 
-@Service
 public class TaskApplicationService implements CreateTaskUseCase, CompleteTaskUseCase, ListTasksUseCase, DeleteTaskUseCase {
 
     private final TaskRepositoryPort taskRepository;
@@ -42,7 +38,6 @@ public class TaskApplicationService implements CreateTaskUseCase, CompleteTaskUs
     }
 
     @Override
-    @Transactional
     public UUID create(UUID projectId, String title) {
         UUID currentUserId = currentUserPort.getCurrentUserId();
         Project project = projectRepository.findById(projectId)
@@ -58,7 +53,6 @@ public class TaskApplicationService implements CreateTaskUseCase, CompleteTaskUs
     }
 
     @Override
-    @Transactional
     public void complete(UUID taskId) {
         UUID currentUserId = currentUserPort.getCurrentUserId();
         Task task = taskRepository.findById(taskId)
@@ -87,7 +81,6 @@ public class TaskApplicationService implements CreateTaskUseCase, CompleteTaskUs
     }
 
     @Override
-    @Transactional
     public void delete(UUID taskId) {
         UUID currentUserId = currentUserPort.getCurrentUserId();
         Task task = taskRepository.findById(taskId)
