@@ -5,6 +5,8 @@ import com.codeup.domain.port.in.CreateTaskUseCase;
 import com.codeup.domain.port.in.DeleteTaskUseCase;
 import com.codeup.domain.port.in.ListTasksUseCase;
 import com.codeup.infrastructure.input.rest.dto.TaskResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +15,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
+@Tag(name = "Tasks", description = "Operations related to task management")
 public class TaskController {
 
     private final CreateTaskUseCase createTaskUseCase;
@@ -32,12 +35,14 @@ public class TaskController {
     }
 
     @PostMapping("/projects/{projectId}/tasks")
+    @Operation(summary = "Create a new task", description = "Creates a task for a specific project.")
     public ResponseEntity<UUID> createTask(@PathVariable UUID projectId, @RequestBody CreateTaskRequest request) {
         UUID taskId = createTaskUseCase.create(projectId, request.title());
         return ResponseEntity.ok(taskId);
     }
 
     @GetMapping("/projects/{projectId}/tasks")
+    @Operation(summary = "List tasks by project", description = "Retrieves all tasks associated with a project (public access).")
     public ResponseEntity<List<TaskResponse>> listTasks(@PathVariable UUID projectId) {
         List<TaskResponse> response = listTasksUseCase.listByProjectId(projectId).stream()
                 .map(t -> new TaskResponse(t.getId(), t.getProjectId(), t.getTitle(), t.getCompleted(), t.getDeleted()))
@@ -46,12 +51,14 @@ public class TaskController {
     }
 
     @PatchMapping("/tasks/{id}/complete")
+    @Operation(summary = "Complete a task", description = "Marks a task as completed. Only the project owner can perform this.")
     public ResponseEntity<Void> completeTask(@PathVariable UUID id) {
         completeTaskUseCase.complete(id);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/tasks/{id}")
+    @Operation(summary = "Delete a task", description = "Performs a soft delete on the task.")
     public ResponseEntity<Void> deleteTask(@PathVariable UUID id) {
         deleteTaskUseCase.delete(id);
         return ResponseEntity.noContent().build();

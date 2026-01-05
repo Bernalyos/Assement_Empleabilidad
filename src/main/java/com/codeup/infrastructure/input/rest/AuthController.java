@@ -3,6 +3,8 @@ package com.codeup.infrastructure.input.rest;
 import com.codeup.infrastructure.security.JwtUtils;
 import com.codeup.infrastructure.persistence.entity.UserEntity;
 import com.codeup.infrastructure.persistence.repository.JpaUserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,7 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
+@Tag(name = "Authentication", description = "Operations related to user authentication and registration")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -34,6 +37,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "User login", description = "Authenticates a user and returns a JWT token.")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
@@ -43,6 +47,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Operation(summary = "User registration", description = "Registers a new user in the system.")
     public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
         if (userRepository.findByUsername(request.username()).isPresent()) {
             return ResponseEntity.badRequest().build();

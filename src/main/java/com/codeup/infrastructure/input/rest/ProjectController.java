@@ -5,6 +5,8 @@ import com.codeup.domain.port.in.CreateProjectUseCase;
 import com.codeup.domain.port.in.DeleteProjectUseCase;
 import com.codeup.domain.port.out.ProjectRepositoryPort;
 import com.codeup.infrastructure.input.rest.dto.ProjectResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +15,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/projects")
+@RequestMapping("/api/v1/projects")
+@Tag(name = "Projects", description = "Operations related to project management")
 public class ProjectController {
 
     private final CreateProjectUseCase createProjectUseCase;
@@ -32,12 +35,14 @@ public class ProjectController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new project", description = "Creates a project in DRAFT status for the current user.")
     public ResponseEntity<UUID> createProject(@RequestBody CreateProjectRequest request) {
         UUID projectId = createProjectUseCase.create(request.name());
         return ResponseEntity.ok(projectId);
     }
 
     @GetMapping
+    @Operation(summary = "List all projects", description = "Retrieves a list of all projects (public access).")
     public ResponseEntity<List<ProjectResponse>> listProjects() {
         List<ProjectResponse> response = projectRepositoryPort.findAll().stream()
                 .map(p -> new ProjectResponse(p.getId(), p.getOwnerId(), p.getName(), p.getStatus(), p.getDeleted()))
@@ -46,12 +51,14 @@ public class ProjectController {
     }
 
     @PatchMapping("/{id}/activate")
+    @Operation(summary = "Activate a project", description = "Changes project status to ACTIVE. Requires at least one active task.")
     public ResponseEntity<Void> activateProject(@PathVariable UUID id) {
         activateProjectUseCase.activate(id);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a project", description = "Performs a soft delete on the project.")
     public ResponseEntity<Void> deleteProject(@PathVariable UUID id) {
         deleteProjectUseCase.delete(id);
         return ResponseEntity.noContent().build();
