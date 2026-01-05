@@ -9,7 +9,7 @@ import jakarta.persistence.EnumType;
 import java.util.UUID;
 
 @Entity
-@Table(name = "projects")
+@Table(name = "projects", indexes = @jakarta.persistence.Index(name = "idx_project_owner", columnList = "ownerId"))
 public class ProjectEntity {
 
     @Id

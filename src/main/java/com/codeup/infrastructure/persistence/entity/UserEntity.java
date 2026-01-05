@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = @jakarta.persistence.Index(name = "idx_user_username", columnList = "username", unique = true))
 public class UserEntity {
 
     @Id

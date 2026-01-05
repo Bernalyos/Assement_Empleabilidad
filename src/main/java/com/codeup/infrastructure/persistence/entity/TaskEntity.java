@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 
 @Entity
-@Table(name = "tasks")
+@Table(name = "tasks", indexes = @jakarta.persistence.Index(name = "idx_task_project", columnList = "projectId"))
 public class TaskEntity {
 
     @Id
