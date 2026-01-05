@@ -120,8 +120,11 @@ async function loadProjects() {
     const res = await apiFetch('/projects');
     const projects = await res.json();
     
+    // Filter out deleted projects
+    const activeProjects = projects.filter(p => !p.deleted);
+    
     const list = document.getElementById('project-list');
-    list.innerHTML = projects.map(p => `
+    list.innerHTML = activeProjects.map(p => `
         <div class="glass-card project-card" onclick="viewProject('${p.id}', '${p.name}', '${p.status}')">
             <div class="flex justify-between items-start mb-2">
                 <span class="status-badge status-${p.status.toLowerCase()}">${p.status}</span>
@@ -131,7 +134,7 @@ async function loadProjects() {
         </div>
     `).join('');
     
-    if (projects.length === 0) {
+    if (activeProjects.length === 0) {
         list.innerHTML = '<p class="text-center text-muted" style="grid-column: 1/-1;">No tienes proyectos aún.</p>';
     }
 }
@@ -198,8 +201,11 @@ async function loadTasks() {
     const res = await apiFetch(`/projects/${currentProjectId}/tasks`);
     const tasks = await res.json();
     
+    // Filter out deleted tasks
+    const activeTasks = tasks.filter(t => !t.deleted);
+    
     const list = document.getElementById('task-list');
-    list.innerHTML = tasks.map(t => `
+    list.innerHTML = activeTasks.map(t => `
         <div class="task-item ${t.completed ? 'completed' : ''}">
             <div class="task-title">${t.title}</div>
             <div class="flex gap-2">
@@ -215,7 +221,7 @@ async function loadTasks() {
         </div>
     `).join('');
     
-    if (tasks.length === 0) {
+    if (activeTasks.length === 0) {
         list.innerHTML = '<p class="text-center text-muted mt-4">Sin tareas.</p>';
     }
     lucide.createIcons();

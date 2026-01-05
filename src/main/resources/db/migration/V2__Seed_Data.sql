@@ -4,7 +4,7 @@ VALUES (
         '550e8400-e29b-41d4-a716-446655440000',
         'admin',
         'admin@codeup.com',
-        '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.TVuHOnu'
+        '$2a$10$7LkChJhN47IfY.xa9ccuGeU50Ex5if0FiPeGSmbmI4TaAP59HV1oO'
     );
 -- Seed Projects
 INSERT INTO projects (id, owner_id, name, status, deleted)
