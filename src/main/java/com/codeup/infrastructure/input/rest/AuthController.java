@@ -34,12 +34,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
         String token = jwtUtils.generateToken(request.username());
-        return ResponseEntity.ok(token);
+        return ResponseEntity.ok(new AuthResponse(token));
     }
 
     @PostMapping("/register")
@@ -59,4 +59,5 @@ public class AuthController {
 
     public record LoginRequest(String username, String password) {}
     public record RegisterRequest(String username, String email, String password) {}
+    public record AuthResponse(String token) {}
 }

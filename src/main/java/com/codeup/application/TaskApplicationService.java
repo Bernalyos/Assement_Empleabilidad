@@ -8,6 +8,7 @@ import com.codeup.domain.port.out.ProjectRepositoryPort;
 import com.codeup.domain.port.out.TaskRepositoryPort;
 import com.codeup.domain.port.in.CompleteTaskUseCase;
 import com.codeup.domain.port.in.CreateTaskUseCase;
+import com.codeup.domain.port.in.DeleteTaskUseCase;
 import com.codeup.domain.port.out.AuditLogPort;
 import com.codeup.domain.port.out.CurrentUserPort;
 import com.codeup.domain.port.out.NotificationPort;
@@ -20,7 +21,7 @@ import com.codeup.domain.port.in.ListTasksUseCase;
 import java.util.List;
 
 @Service
-public class TaskApplicationService implements CreateTaskUseCase, CompleteTaskUseCase, ListTasksUseCase {
+public class TaskApplicationService implements CreateTaskUseCase, CompleteTaskUseCase, ListTasksUseCase, DeleteTaskUseCase {
 
     private final TaskRepositoryPort taskRepository;
     private final ProjectRepositoryPort projectRepository;
@@ -83,5 +84,23 @@ public class TaskApplicationService implements CreateTaskUseCase, CompleteTaskUs
     @Override
     public List<Task> listByProjectId(UUID projectId) {
         return taskRepository.findByProjectId(projectId);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID taskId) {
+        UUID currentUserId = currentUserPort.getCurrentUserId();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        Project project = projectRepository.findById(task.getProjectId())
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        if (!project.getOwnerId().equals(currentUserId)) {
+            throw new UnauthorizedActionException();
+        }
+
+        taskRepository.deleteById(taskId);
+        auditLogPort.register("DELETE_TASK", taskId);
     }
 }

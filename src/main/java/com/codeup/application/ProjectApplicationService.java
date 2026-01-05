@@ -9,6 +9,7 @@ import com.codeup.domain.port.out.ProjectRepositoryPort;
 import com.codeup.domain.port.out.TaskRepositoryPort;
 import com.codeup.domain.port.in.ActivateProjectUseCase;
 import com.codeup.domain.port.in.CreateProjectUseCase;
+import com.codeup.domain.port.in.DeleteProjectUseCase;
 import com.codeup.domain.port.out.AuditLogPort;
 import com.codeup.domain.port.out.CurrentUserPort;
 import com.codeup.domain.port.out.NotificationPort;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class ProjectApplicationService implements CreateProjectUseCase, ActivateProjectUseCase {
+public class ProjectApplicationService implements CreateProjectUseCase, ActivateProjectUseCase, DeleteProjectUseCase {
 
     private final ProjectRepositoryPort projectRepository;
     private final TaskRepositoryPort taskRepository;
@@ -72,5 +73,20 @@ public class ProjectApplicationService implements CreateProjectUseCase, Activate
 
         auditLogPort.register("ACTIVATE_PROJECT", projectId);
         notificationPort.notify("Project " + projectId + " activated");
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID projectId) {
+        UUID currentUserId = currentUserPort.getCurrentUserId();
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        if (!project.getOwnerId().equals(currentUserId)) {
+            throw new UnauthorizedActionException();
+        }
+
+        projectRepository.deleteById(projectId);
+        auditLogPort.register("DELETE_PROJECT", projectId);
     }
 }

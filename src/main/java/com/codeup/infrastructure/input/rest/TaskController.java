@@ -2,6 +2,7 @@ package com.codeup.infrastructure.input.rest;
 
 import com.codeup.domain.port.in.CompleteTaskUseCase;
 import com.codeup.domain.port.in.CreateTaskUseCase;
+import com.codeup.domain.port.in.DeleteTaskUseCase;
 import com.codeup.domain.port.in.ListTasksUseCase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,13 +16,16 @@ public class TaskController {
     private final CreateTaskUseCase createTaskUseCase;
     private final CompleteTaskUseCase completeTaskUseCase;
     private final ListTasksUseCase listTasksUseCase;
+    private final DeleteTaskUseCase deleteTaskUseCase;
 
     public TaskController(CreateTaskUseCase createTaskUseCase, 
                           CompleteTaskUseCase completeTaskUseCase,
-                          ListTasksUseCase listTasksUseCase) {
+                          ListTasksUseCase listTasksUseCase,
+                          DeleteTaskUseCase deleteTaskUseCase) {
         this.createTaskUseCase = createTaskUseCase;
         this.completeTaskUseCase = completeTaskUseCase;
         this.listTasksUseCase = listTasksUseCase;
+        this.deleteTaskUseCase = deleteTaskUseCase;
     }
 
     @PostMapping("/projects/{projectId}/tasks")
@@ -39,6 +43,12 @@ public class TaskController {
     public ResponseEntity<Void> completeTask(@PathVariable UUID id) {
         completeTaskUseCase.complete(id);
         return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/tasks/{id}")
+    public ResponseEntity<Void> deleteTask(@PathVariable UUID id) {
+        deleteTaskUseCase.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     public record CreateTaskRequest(String title) {}
