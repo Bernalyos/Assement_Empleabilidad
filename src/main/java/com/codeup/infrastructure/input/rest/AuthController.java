@@ -1,0 +1,68 @@
+package com.codeup.infrastructure.input.rest;
+
+import com.codeup.infrastructure.security.JwtUtils;
+import com.codeup.infrastructure.persistence.entity.UserEntity;
+import com.codeup.infrastructure.persistence.repository.JpaUserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+@Tag(name = "Authentication", description = "Operations related to user authentication and registration")
+public class AuthController {
+
+    private final AuthenticationManager authenticationManager;
+    private final JpaUserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+
+    public AuthController(AuthenticationManager authenticationManager,
+                          JpaUserRepository userRepository,
+                          PasswordEncoder passwordEncoder,
+                          JwtUtils jwtUtils) {
+        this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtils = jwtUtils;
+    }
+
+    @PostMapping("/login")
+    @Operation(summary = "User login", description = "Authenticates a user and returns a JWT token.")
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.username(), request.password())
+        );
+        String token = jwtUtils.generateToken(request.username());
+        return ResponseEntity.ok(new AuthResponse(token));
+    }
+
+    @PostMapping("/register")
+    @Operation(summary = "User registration", description = "Registers a new user in the system.")
+    public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
+        if (userRepository.findByUsername(request.username()).isPresent()) {
+            return ResponseEntity.badRequest().build();
+        }
+        UserEntity user = new UserEntity(
+                UUID.randomUUID(),
+                request.username(),
+                request.email(),
+                passwordEncoder.encode(request.password())
+        );
+        userRepository.save(user);
+        return ResponseEntity.ok().build();
+    }
+
+    public record LoginRequest(String username, String password) {}
+    public record RegisterRequest(String username, String email, String password) {}
+    public record AuthResponse(String token) {}
+}
