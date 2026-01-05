@@ -54,41 +54,76 @@ class ProjectApplicationServiceTest {
     }
 
     @Test
-    void ActivateProject_WithTasks_ShouldSucceed() {
+    void createProject_ShouldSaveAndReturnId() {
+        String projectName = "New Project";
+        when(currentUserPort.getCurrentUserId()).thenReturn(userId);
+        when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UUID resultId = projectService.create(projectName);
+
+        assertNotNull(resultId);
+        verify(projectRepository).save(any(Project.class));
+        verify(auditLogPort).register(eq("CREATE_PROJECT"), any(UUID.class));
+    }
+
+    @Test
+    void activateProject_WhenProjectExistsAndHasTasks_ShouldSetStatusToActive() {
         when(currentUserPort.getCurrentUserId()).thenReturn(userId);
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         
         Task task = new Task(UUID.randomUUID(), projectId, "Test Task", false, false);
-        when(taskRepository.findAll()).thenReturn(List.of(task)); // Ideally should be findByProjectId
+        when(taskRepository.findAll()).thenReturn(List.of(task));
 
         projectService.activate(projectId);
 
         assertEquals(ProjectStatus.ACTIVE, project.getStatus());
         verify(projectRepository).save(project);
         verify(auditLogPort).register(eq("ACTIVATE_PROJECT"), eq(projectId));
-        verify(notificationPort).notify(anyString());
+        verify(notificationPort).notify(contains("activated"));
     }
 
     @Test
-    void ActivateProject_WithoutTasks_ShouldFail() {
+    void activateProject_WhenProjectHasNoTasks_ShouldThrowBusinessRuleViolation() {
         when(currentUserPort.getCurrentUserId()).thenReturn(userId);
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(taskRepository.findAll()).thenReturn(Collections.emptyList());
 
-        assertThrows(BusinessRuleViolationException.class, () -> projectService.activate(projectId));
+        BusinessRuleViolationException exception = assertThrows(BusinessRuleViolationException.class, 
+            () -> projectService.activate(projectId));
         
+        assertTrue(exception.getMessage().contains("at least one task"));
         assertEquals(ProjectStatus.DRAFT, project.getStatus());
         verify(projectRepository, never()).save(project);
     }
 
     @Test
-    void ActivateProject_ByNonOwner_ShouldFail() {
+    void activateProject_WhenUserIsNotOwner_ShouldThrowUnauthorizedAction() {
         UUID otherUserId = UUID.randomUUID();
         when(currentUserPort.getCurrentUserId()).thenReturn(otherUserId);
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
 
         assertThrows(UnauthorizedActionException.class, () -> projectService.activate(projectId));
-        
         verify(projectRepository, never()).save(project);
+    }
+
+    @Test
+    void deleteProject_WhenOwnerDeletes_ShouldMarkAsDeleted() {
+        when(currentUserPort.getCurrentUserId()).thenReturn(userId);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+
+        projectService.delete(projectId);
+
+        assertTrue(project.getDeleted());
+        verify(projectRepository).save(project);
+        verify(auditLogPort).register(eq("DELETE_PROJECT"), eq(projectId));
+    }
+
+    @Test
+    void deleteProject_WhenProjectNotFound_ShouldThrowException() {
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> projectService.delete(projectId));
+
+        verify(projectRepository, never()).save(any());
     }
 }

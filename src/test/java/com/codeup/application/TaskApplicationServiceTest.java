@@ -55,7 +55,32 @@ class TaskApplicationServiceTest {
     }
 
     @Test
-    void CompleteTask_ShouldGenerateAuditAndNotification() {
+    void createTask_WhenProjectIsDraft_ShouldSaveAndReturnId() {
+        String taskTitle = "New Task";
+        project.setStatus(ProjectStatus.DRAFT);
+        when(currentUserPort.getCurrentUserId()).thenReturn(userId);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UUID resultId = taskService.create(projectId, taskTitle);
+
+        assertNotNull(resultId);
+        verify(taskRepository).save(any(Task.class));
+        verify(auditLogPort).register(eq("CREATE_TASK"), any(UUID.class));
+    }
+
+    @Test
+    void createTask_WhenProjectIsNotDraft_ShouldThrowBusinessRuleViolation() {
+        project.setStatus(ProjectStatus.ACTIVE);
+        when(currentUserPort.getCurrentUserId()).thenReturn(userId);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+
+        assertThrows(BusinessRuleViolationException.class, () -> taskService.create(projectId, "Title"));
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    void completeTask_WhenOwnerCompletes_ShouldMarkAsCompleted() {
         when(currentUserPort.getCurrentUserId()).thenReturn(userId);
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
@@ -65,18 +90,30 @@ class TaskApplicationServiceTest {
         assertTrue(task.getCompleted());
         verify(taskRepository).save(task);
         verify(auditLogPort).register(eq("COMPLETE_TASK"), eq(taskId));
-        verify(notificationPort).notify(anyString());
+        verify(notificationPort).notify(contains("completed"));
     }
 
     @Test
-    void CompleteTask_AlreadyCompleted_ShouldFail() {
+    void completeTask_WhenAlreadyCompleted_ShouldThrowBusinessRuleViolation() {
         task.setCompleted(true);
         when(currentUserPort.getCurrentUserId()).thenReturn(userId);
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
 
         assertThrows(BusinessRuleViolationException.class, () -> taskService.complete(taskId));
-        
         verify(taskRepository, never()).save(task);
+    }
+
+    @Test
+    void deleteTask_WhenOwnerDeletes_ShouldMarkAsDeleted() {
+        when(currentUserPort.getCurrentUserId()).thenReturn(userId);
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+
+        taskService.delete(taskId);
+
+        assertTrue(task.getDeleted());
+        verify(taskRepository).save(task);
+        verify(auditLogPort).register(eq("DELETE_TASK"), eq(taskId));
     }
 }
