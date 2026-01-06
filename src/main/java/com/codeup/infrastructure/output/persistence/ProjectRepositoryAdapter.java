@@ -40,6 +40,13 @@ public class ProjectRepositoryAdapter implements ProjectRepositoryPort {
     }
 
     @Override
+    public List<Project> findByOwnerId(UUID ownerId) {
+        return jpaProjectRepository.findByOwnerId(ownerId).stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void deleteById(UUID id) {
         jpaProjectRepository.findById(id).ifPresent(entity -> {
             entity.setDeleted(true);

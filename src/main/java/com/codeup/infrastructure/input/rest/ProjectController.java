@@ -3,6 +3,7 @@ package com.codeup.infrastructure.input.rest;
 import com.codeup.domain.port.in.ActivateProjectUseCase;
 import com.codeup.domain.port.in.CreateProjectUseCase;
 import com.codeup.domain.port.in.DeleteProjectUseCase;
+import com.codeup.domain.port.out.CurrentUserPort;
 import com.codeup.domain.port.out.ProjectRepositoryPort;
 import com.codeup.infrastructure.input.rest.dto.ProjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,15 +24,18 @@ public class ProjectController {
     private final ActivateProjectUseCase activateProjectUseCase;
     private final DeleteProjectUseCase deleteProjectUseCase;
     private final ProjectRepositoryPort projectRepositoryPort;
+    private final CurrentUserPort currentUserPort;
 
     public ProjectController(CreateProjectUseCase createProjectUseCase,
                              ActivateProjectUseCase activateProjectUseCase,
                              DeleteProjectUseCase deleteProjectUseCase,
-                             ProjectRepositoryPort projectRepositoryPort) {
+                             ProjectRepositoryPort projectRepositoryPort,
+                             CurrentUserPort currentUserPort) {
         this.createProjectUseCase = createProjectUseCase;
         this.activateProjectUseCase = activateProjectUseCase;
         this.deleteProjectUseCase = deleteProjectUseCase;
         this.projectRepositoryPort = projectRepositoryPort;
+        this.currentUserPort = currentUserPort;
     }
 
     @PostMapping
@@ -42,9 +46,10 @@ public class ProjectController {
     }
 
     @GetMapping
-    @Operation(summary = "List all projects", description = "Retrieves a list of all projects (public access).")
+    @Operation(summary = "List all projects", description = "Retrieves a list of all projects for the current user.")
     public ResponseEntity<List<ProjectResponse>> listProjects() {
-        List<ProjectResponse> response = projectRepositoryPort.findAll().stream()
+        UUID currentUserId = currentUserPort.getCurrentUserId();
+        List<ProjectResponse> response = projectRepositoryPort.findByOwnerId(currentUserId).stream()
                 .map(p -> new ProjectResponse(p.getId(), p.getOwnerId(), p.getName(), p.getStatus(), p.getDeleted()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
