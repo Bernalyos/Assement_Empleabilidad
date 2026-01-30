@@ -10,5 +10,6 @@ public interface ProjectRepositoryPort {
     Project save(Project project);
     Optional<Project> findById(UUID id);
     List<Project> findAll();
+    List<Project> findByOwnerId(UUID ownerId);
     void deleteById(UUID id);
 }
