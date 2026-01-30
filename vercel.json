@@ -3,22 +3,22 @@
   "name": "nextask-frontend",
   "cleanUrls": true,
   "trailingSlash": false,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://your-backend-api-url.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://your-backend-api-url.com/api/:path*"
     },
     {
-      "src": "/css/(.*)",
-      "dest": "/src/main/resources/static/css/$1"
+      "source": "/css/:path*",
+      "destination": "/src/main/resources/static/css/:path*"
     },
     {
-      "src": "/js/(.*)",
-      "dest": "/src/main/resources/static/js/$1"
+      "source": "/js/:path*",
+      "destination": "/src/main/resources/static/js/:path*"
     },
     {
-      "src": "/(.*)",
-      "dest": "/src/main/resources/static/index.html"
+      "source": "/((?!api|css|js).*)",
+      "destination": "/src/main/resources/static/index.html"
     }
   ]
 }
